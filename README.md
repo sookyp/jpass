@@ -13,7 +13,7 @@ Features:
 * Organize all your user name, password, URL and notes information in one file
 * Data import/export in XML format
 
-![JPass](https://raw.githubusercontent.com/gaborbata/jpass/master/resources/jpass-screenshot.png)
+![JPass](https://raw.githubusercontent.com/gaborbata/jpass/master/resources/jpass-capture.gif)
 
 How to compile
 --------------
@@ -22,14 +22,14 @@ How to compile
 
 Usage
 -----
-Java 6 or later is recommended to run JPass. Most platforms have a mechanism to execute `.jar` files (e.g. double click the `jpass-0.1.12s.jar`).
+Java 6 or later is recommended to run JPass. Most platforms have a mechanism to execute `.jar` files (e.g. double click the `jpass-0.1.13s.jar`).
 You can also run the application from the command line by typing (the password file is optional):
 
-    java -jar jpass-0.1.12s.jar [password_file]
+    java -jar jpass-0.1.13s.jar [password_file]
 
 License
 -------
-Copyright (c) 2009-2012 Gabor Bata
+Copyright (c) 2009-2015 Gabor Bata
 
 All rights reserved.
 

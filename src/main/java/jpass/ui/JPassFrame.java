@@ -1,7 +1,7 @@
 /*
  * JPass
  *
- * Copyright (c) 2009-2012 Gabor Bata
+ * Copyright (c) 2009-2015 Gabor Bata
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,6 +51,7 @@ import jpass.ui.action.Callback;
 import jpass.ui.action.CloseListener;
 import jpass.ui.action.ListListener;
 import jpass.ui.action.MenuActionType;
+import jpass.ui.helper.EntryHelper;
 import jpass.ui.helper.FileHelper;
 
 /**
@@ -65,7 +66,7 @@ public final class JPassFrame extends JFrame {
     private static volatile JPassFrame INSTANCE;
 
     public static final String PROGRAM_NAME = "JPass Password Manager";
-    public static final String PROGRAM_VERSION = "0.1.12s";
+    public static final String PROGRAM_VERSION = "0.1.13s";
 
     private final JPopupMenu popup;
     private final JMenuBar menuBar;
@@ -237,7 +238,7 @@ public final class JPassFrame extends JFrame {
     public void refreshEntryTitleList(String selectTitle) {
         this.entryTitleListModel.clear();
         List<String> titleList = this.model.getListOfTitles();
-        Collections.sort(titleList);
+        Collections.sort(titleList, String.CASE_INSENSITIVE_ORDER);
         for (String title : titleList) {
             this.entryTitleListModel.addElement(title);
         }
@@ -259,6 +260,9 @@ public final class JPassFrame extends JFrame {
      * Exits the application.
      */
     public void exitFrame() {
+        // Clear clipboard on exit
+        EntryHelper.copyEntryField(this, null);
+
         if (this.processing) {
             return;
         }
