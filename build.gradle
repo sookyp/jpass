@@ -6,8 +6,15 @@ targetCompatibility = 1.6
 
 jar {
     baseName = 'jpass'
-    version = '0.1.13s'
+    version = '0.1.13'
     manifest {
         attributes('Main-Class': 'jpass.JPass')
     }
 }
+
+task copyConfig(type: Copy) {
+    from 'src/main/config'
+    into 'build/libs'
+}
+
+build.dependsOn copyConfig
