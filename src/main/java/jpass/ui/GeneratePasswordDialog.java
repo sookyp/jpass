@@ -90,6 +90,8 @@ public final class GeneratePasswordDialog extends JDialog implements ActionListe
     private JButton acceptButton;
     private JButton cancelButton;
     private JButton generateButton;
+    private JButton generateCardButton;
+    
 
     private String generatedPassword;
 
@@ -176,8 +178,13 @@ public final class GeneratePasswordDialog extends JDialog implements ActionListe
         this.generateButton.setActionCommand("generate_button");
         this.generateButton.addActionListener(this);
         this.generateButton.setMnemonic(KeyEvent.VK_G);
-        JPanel generateButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        this.generateCardButton = new JButton("Generate On Card", MessageDialog.getIcon("card"));
+        this.generateCardButton.setActionCommand("generate_card_button");
+        this.generateCardButton.addActionListener(this);
+        this.generateCardButton.setMnemonic(KeyEvent.VK_K);
+        JPanel generateButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         generateButtonPanel.add(this.generateButton);
+        generateButtonPanel.add(this.generateCardButton);
         this.passwordPanel.add(generateButtonPanel, BorderLayout.SOUTH);
 
         this.buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
@@ -241,6 +248,8 @@ public final class GeneratePasswordDialog extends JDialog implements ActionListe
                 generated.append(characterSet.charAt(this.random.nextInt(characterSet.length())));
             }
             this.passwordField.setText(generated.toString());
+        } else if ("generate_card_button".equals(command)) {
+        	// TODO
         } else if ("accept_button".equals(command)) {
             this.generatedPassword = this.passwordField.getText();
             if (this.generatedPassword.isEmpty()) {

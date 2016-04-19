@@ -240,6 +240,22 @@ public enum MenuActionType {
         public void actionPerformed(ActionEvent ev) {
             JPassFrame.getInstance().getSearchPanel().setVisible(true);
         }
+    }),
+    
+    LOAD_CARD("jpass.menu.load_card_action", new AbstractMenuAction("Load from Card", MessageDialog.getIcon("card"), KeyStroke.getKeyStroke(KeyEvent.VK_L, InputEvent.CTRL_MASK)) {
+        private static final long serialVersionUID = 1040523949303942306L;
+        @Override
+        public void actionPerformed(ActionEvent ev) {
+            MessageDialog.showPinDialog(JPassFrame.getInstance());
+        }
+    }),
+    
+    SAVE_CARD("jpass.menu.save_card_action", new AbstractMenuAction("Save to Card", MessageDialog.getIcon("save_card"), KeyStroke.getKeyStroke(KeyEvent.VK_J, InputEvent.CTRL_MASK)) {
+        private static final long serialVersionUID = 1040523949303942306L;
+        @Override	
+        public void actionPerformed(ActionEvent ev) {
+            MessageDialog.showPinDialog(JPassFrame.getInstance());
+        }
     });
 
     private final String name;

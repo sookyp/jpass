@@ -134,6 +134,9 @@ public final class JPassFrame extends JFrame {
         this.fileMenu.add(MenuActionType.SAVE_FILE.getAction());
         this.fileMenu.add(MenuActionType.SAVE_AS_FILE.getAction());
         this.fileMenu.addSeparator();
+        this.fileMenu.add(MenuActionType.LOAD_CARD.getAction());
+        this.fileMenu.add(MenuActionType.SAVE_CARD.getAction());
+        this.fileMenu.addSeparator();
         this.fileMenu.add(MenuActionType.EXPORT_XML.getAction());
         this.fileMenu.add(MenuActionType.IMPORT_XML.getAction());
         this.fileMenu.addSeparator();

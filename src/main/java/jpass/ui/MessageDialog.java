@@ -340,4 +340,41 @@ public final class MessageDialog extends JDialog implements ActionListener {
         scrollPane.setPreferredSize(new Dimension(600, 400));
         showMessageDialog(parent, scrollPane, title, null, DEFAULT_OPTION);
     }
+    
+    /**
+     * Shows a PIN dialog.
+     *
+     * @param parent parent component
+     * @return the PIN
+     */
+    @SuppressWarnings("null")
+    public static byte[] showPinDialog(final Component parent) {
+        JPanel panel = new JPanel();
+        panel.add(new JLabel("PIN:"));
+        final JPasswordField pin = TextComponentFactory.newPasswordField();
+        panel.add(pin);
+
+        panel.setLayout(new SpringLayout());
+        SpringUtilities.makeCompactGrid(panel, 1, 2, 5, 5, 5, 5);
+        boolean notCorrect = true;
+
+        while (notCorrect) {
+            int option = showMessageDialog(parent, panel, "Enter PIN", getIcon("dialog_lock"), OK_CANCEL_OPTION);
+            if (option == OK_OPTION) {
+                if (pin.getPassword().length == 0) {
+                    showWarningMessage(parent, "Please enter your PIN.");
+                } else {
+                	// TODO
+                    notCorrect = false;
+                }
+            } else {
+                return null;
+            }
+        }
+
+        byte[] pinHash = null;
+        // TODO
+        return pinHash;
+
+    }
 }
