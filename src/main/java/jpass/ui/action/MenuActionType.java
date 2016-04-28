@@ -246,7 +246,7 @@ public enum MenuActionType {
         private static final long serialVersionUID = 1040523949303942306L;
         @Override
         public void actionPerformed(ActionEvent ev) {
-            MessageDialog.showPinDialog(JPassFrame.getInstance());
+            MessageDialog.showPinDialog(JPassFrame.getInstance(), ev);
         }
     }),
     
@@ -254,7 +254,7 @@ public enum MenuActionType {
         private static final long serialVersionUID = 1040523949303942306L;
         @Override	
         public void actionPerformed(ActionEvent ev) {
-            MessageDialog.showPinDialog(JPassFrame.getInstance());
+            MessageDialog.showPinDialog(JPassFrame.getInstance(), ev);
         }
     });
 

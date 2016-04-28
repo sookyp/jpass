@@ -50,6 +50,7 @@ import javax.swing.SpringLayout;
 import javax.swing.WindowConstants;
 import javax.swing.border.TitledBorder;
 
+import jpass.card.CardInterface;
 import jpass.util.Configuration;
 import jpass.util.CryptUtils;
 import jpass.util.SpringUtilities;
@@ -92,6 +93,7 @@ public final class GeneratePasswordDialog extends JDialog implements ActionListe
     private JButton generateButton;
     private JButton generateCardButton;
     
+    static private CardInterface CI = new CardInterface();
 
     private String generatedPassword;
 
@@ -250,6 +252,36 @@ public final class GeneratePasswordDialog extends JDialog implements ActionListe
             this.passwordField.setText(generated.toString());
         } else if ("generate_card_button".equals(command)) {
         	// TODO
+
+        	String characterSet = "";
+            for (int i = 0; i < passwordOptions.length; i++) {
+                if (this.checkBoxes[i].isSelected()) {
+                    characterSet += passwordOptions[i][1];
+                }
+            }
+
+            if (this.customSymbolsCheck.isSelected()) {
+                characterSet += this.customSymbolsField.getText();
+            }
+
+            if (characterSet.isEmpty()) {
+                MessageDialog.showWarningMessage(this, "Cannot generate password.\nPlease select a character set.");
+                return;
+            }
+        	
+        	StringBuilder generated = new StringBuilder();
+        	int passwordLength = Integer.parseInt(String.valueOf(this.lengthSpinner.getValue()));
+        	if (CI.InitSession(true)) {
+        		String pwd = CI.GeneratePassword(passwordLength);
+        		for (int i = 0; i < passwordLength; i++) {
+                    generated.append(characterSet.charAt(this.random.nextInt(characterSet.length())));
+                }
+                this.passwordField.setText(generated.toString());
+                CI.CloseSession(true);
+        	} else {
+        		MessageDialog.showWarningMessage(this, CI.getError());
+        	}
+        	
         } else if ("accept_button".equals(command)) {
             this.generatedPassword = this.passwordField.getText();
             if (this.generatedPassword.isEmpty()) {

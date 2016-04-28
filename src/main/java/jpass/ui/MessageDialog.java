@@ -60,6 +60,7 @@ import javax.swing.border.EmptyBorder;
 import jpass.util.CryptUtils;
 import jpass.util.SpringUtilities;
 import jpass.util.StringUtils;
+import jpass.card.CardInterface;
 
 /**
  * Utility class for displaying message dialogs.
@@ -82,6 +83,8 @@ public final class MessageDialog extends JDialog implements ActionListener {
     public static final int CLOSED_OPTION = -1;
 
     private int selectedOption;
+    
+    private static CardInterface CI = new CardInterface();
 
     private MessageDialog(final Dialog parent, final Object message, final String title, ImageIcon icon, int optionType) {
         super(parent);
@@ -348,7 +351,7 @@ public final class MessageDialog extends JDialog implements ActionListener {
      * @return the PIN
      */
     @SuppressWarnings("null")
-    public static byte[] showPinDialog(final Component parent) {
+    public static byte[] showPinDialog(final Component parent, ActionEvent ev) {
         JPanel panel = new JPanel();
         panel.add(new JLabel("PIN:"));
         final JPasswordField pin = TextComponentFactory.newPasswordField();
@@ -364,7 +367,26 @@ public final class MessageDialog extends JDialog implements ActionListener {
                 if (pin.getPassword().length == 0) {
                     showWarningMessage(parent, "Please enter your PIN.");
                 } else {
-                	// TODO
+                	// TODO: InitSession and CloseSession parameter needs to be changed
+                	// We want reference equality
+                	if (ev.getActionCommand() == "Load from Card") {
+                		if (CI.InitSession(true) && CI.VerifyPIN(pin.getPassword())) {
+                			// TODO: retrieve data from card
+                			
+                			CI.CloseSession(true);
+	                	} else {
+	                		showWarningMessage(parent, CI.getError());
+	                	}
+                	} else if (ev.getActionCommand() == "Save to Card") {
+                		if (CI.InitSession(true) && CI.SetPIN(pin.getPassword())) {
+                			showInformationMessage(parent, CI.getError());
+                			// TODO: send data and pin to card
+                			
+                			CI.CloseSession(true);
+	                	} else {
+	                		showWarningMessage(parent, CI.getError());
+	                	}
+                	}
                     notCorrect = false;
                 }
             } else {
