@@ -8,8 +8,21 @@ import jpass.ui.helper.FileHelper;
 import jpass.xml.bind.Entries;
 import jpass.xml.bind.Entry;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.ShortBufferException;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import javax.smartcardio.ResponseAPDU;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.util.Arrays;
 import java.util.List;
 import java.io.FileNotFoundException;
@@ -240,10 +253,46 @@ public class CardInterface {
 					this.error = "Error occured while saving the passwords";
 				}
 
+				String encryptionKey = "0123456789abcdef";
+				String IV = "AAAAAAAAAAAAAAAA";
+
+				String decrytpted = null;
+				byte[] message = response.getData();
 				String raw_data = bytesToHex(response.getData());
+				
+				try {
+					Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", "SunJCE");
+				    SecretKeySpec key = new SecretKeySpec(encryptionKey.getBytes("UTF-8"), "AES");
+				    cipher.init(Cipher.DECRYPT_MODE, key,new IvParameterSpec(IV.getBytes("UTF-8")));
+				    decrytpted = new String(cipher.doFinal(message),"UTF-8");
+				} catch (NoSuchAlgorithmException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (NoSuchProviderException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (NoSuchPaddingException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (UnsupportedEncodingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IllegalBlockSizeException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (BadPaddingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (InvalidKeyException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (InvalidAlgorithmParameterException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 
 				// TODO: parse the password
-				JPassFrame.getInstance().getModel().getEntries().getEntry().get(index).setPassword(raw_data);
+				JPassFrame.getInstance().getModel().getEntries().getEntry().get(index).setPassword(decrytpted);
 				index++;
 			} catch (Exception e) {
 
@@ -272,16 +321,54 @@ public class CardInterface {
 		byte entry_count = (byte) entry_list.size();
 		// conversion
 		String data = "";
+
+		// TODO: use proper encryption parameters
+		String encryptionKey = "0123456789abcdef";
+		String IV = "AAAAAAAAAAAAAAAA";
+
 		for (byte i = 0; i < entry_count; i++) {
 			data = "";
-			data += (entry_list.get(i).getTitle());
-			data += "\r\n";
+			// data += (entry_list.get(i).getTitle());
+			// data += "\r\n";
 			data += (entry_list.get(i).getPassword());
 			data += "\r\n\r\n";
 
 			byte message[] = data.getBytes();
+			byte[] encrypted = null;
 
-			byte DataLength = (byte) (message.length);
+			try {
+				Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", "SunJCE");
+				SecretKeySpec key = new SecretKeySpec(encryptionKey.getBytes("UTF-8"), "AES");
+			    cipher.init(Cipher.ENCRYPT_MODE, key,new IvParameterSpec(IV.getBytes("UTF-8")));
+			    encrypted = cipher.doFinal(data.getBytes("UTF-8"));
+			} catch (NoSuchAlgorithmException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			} catch (NoSuchProviderException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			} catch (NoSuchPaddingException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			} catch (UnsupportedEncodingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IllegalBlockSizeException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (BadPaddingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (InvalidKeyException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (InvalidAlgorithmParameterException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	    	
+			
+			byte DataLength = (byte) (encrypted.length);
 
 			byte apdu[] = new byte[CardManager.HEADER_LENGTH + DataLength];
 			apdu[CardManager.OFFSET_CLA] = (byte) 0xB0;
@@ -291,7 +378,7 @@ public class CardInterface {
 			apdu[CardManager.OFFSET_LC] = DataLength;
 
 			for (byte j = 0; j < (byte) DataLength; j++) {
-				apdu[CardManager.OFFSET_DATA + j] = message[j];
+				apdu[CardManager.OFFSET_DATA + j] = encrypted[j];
 			}
 
 			try {
