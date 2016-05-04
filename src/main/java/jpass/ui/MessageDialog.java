@@ -43,7 +43,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
-
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -61,6 +60,7 @@ import jpass.util.CryptUtils;
 import jpass.util.SpringUtilities;
 import jpass.util.StringUtils;
 import jpass.card.CardInterface;
+import jpass.data.DataModel;
 
 /**
  * Utility class for displaying message dialogs.
@@ -367,22 +367,19 @@ public final class MessageDialog extends JDialog implements ActionListener {
                 if (pin.getPassword().length == 0) {
                     showWarningMessage(parent, "Please enter your PIN.");
                 } else {
-                	// TODO: InitSession and CloseSession parameter needs to be changed
                 	// We want reference equality
                 	if (ev.getActionCommand() == "Load from Card") {
-                		if (CI.InitSession(true) && CI.VerifyPIN(pin.getPassword())) {
-                			// TODO: retrieve data from card
-                			
-                			CI.CloseSession(true);
+                		if (CI.InitSession() && CI.VerifyPIN(pin.getPassword())) {
+                			CI.LoadData();
+                			CI.CloseSession();
 	                	} else {
 	                		showWarningMessage(parent, CI.getError());
 	                	}
                 	} else if (ev.getActionCommand() == "Save to Card") {
-                		if (CI.InitSession(true) && CI.SetPIN(pin.getPassword())) {
+                		if (CI.InitSession() && CI.SetPIN(pin.getPassword())) {
                 			showInformationMessage(parent, CI.getError());
-                			// TODO: send data and pin to card
-                			
-                			CI.CloseSession(true);
+							CI.SaveData();      			                			
+                			CI.CloseSession();
 	                	} else {
 	                		showWarningMessage(parent, CI.getError());
 	                	}

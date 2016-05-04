@@ -286,6 +286,7 @@ public final class FileHelper {
                 return;
             }
         }
+        parent.filename = file.getPath();
         doOpenFile(file.getPath(), parent);
     }
 
@@ -304,6 +305,7 @@ public final class FileHelper {
         if (password == null) {
             return;
         }
+        parent.password = password;
         Worker worker = new Worker(parent) {
             @Override
             protected Void doInBackground() throws Exception {

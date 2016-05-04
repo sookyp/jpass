@@ -251,7 +251,6 @@ public final class GeneratePasswordDialog extends JDialog implements ActionListe
             }
             this.passwordField.setText(generated.toString());
         } else if ("generate_card_button".equals(command)) {
-        	// TODO
 
         	String characterSet = "";
             for (int i = 0; i < passwordOptions.length; i++) {
@@ -271,13 +270,13 @@ public final class GeneratePasswordDialog extends JDialog implements ActionListe
         	
         	StringBuilder generated = new StringBuilder();
         	int passwordLength = Integer.parseInt(String.valueOf(this.lengthSpinner.getValue()));
-        	if (CI.InitSession(true)) {
+        	if (CI.InitSession()) {
         		String pwd = CI.GeneratePassword(passwordLength);
         		for (int i = 0; i < passwordLength; i++) {
                     generated.append(characterSet.charAt(this.random.nextInt(characterSet.length())));
                 }
                 this.passwordField.setText(generated.toString());
-                CI.CloseSession(true);
+                CI.CloseSession();
         	} else {
         		MessageDialog.showWarningMessage(this, CI.getError());
         	}

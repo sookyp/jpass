@@ -85,6 +85,9 @@ public final class JPassFrame extends JFrame {
     private final DataModel model = DataModel.getInstance();
     private final StatusPanel statusPanel;
     private volatile boolean processing = false;
+    
+    public String filename = "";
+    public byte[] password;
 
     private JPassFrame(String fileName) {
         try {

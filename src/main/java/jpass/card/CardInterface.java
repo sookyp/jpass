@@ -1,25 +1,23 @@
 package jpass.card;
 
 import jpass.data.DataModel;
+import jpass.data.DocumentHelper;
+import jpass.data.DocumentProcessException;
+import jpass.ui.JPassFrame;
+import jpass.ui.helper.FileHelper;
+import jpass.xml.bind.Entries;
+import jpass.xml.bind.Entry;
+
 import javax.smartcardio.ResponseAPDU;
-import javax.smartcardio.CardException;
-
-import applets.SimpleApplet;
-
+import java.io.IOException;
 import java.util.Arrays;
-
+import java.util.List;
+import java.io.FileNotFoundException;
+import jpass.xml.converter.JAXBConverter;
 
 public class CardInterface {
 
-	public final byte selectCardManager[] = { (byte) 0x00, (byte) 0xa4, (byte) 0x04, (byte) 0x00, (byte) 0x07,
-			(byte) 0xa0, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x18, (byte) 0x43, (byte) 0x4d };
-
-	public final byte appletAID[] = { (byte) 0x4C, (byte) 0x61, (byte) 0x62, (byte) 0x61, (byte) 0x6B, (byte) 0x41,
-			(byte) 0x70, (byte) 0x70, (byte) 0x6C, (byte) 0x65, (byte) 0x74 };
-
-	public final byte selectApplet[] = { (byte) 0x00, (byte) 0xa4, (byte) 0x04, (byte) 0x00, (byte) 0x0b, (byte) 0x4C,
-			(byte) 0x61, (byte) 0x62, (byte) 0x61, (byte) 0x6B, (byte) 0x41, (byte) 0x70, (byte) 0x70, (byte) 0x6C,
-			(byte) 0x65, (byte) 0x74 };
+	public final byte selectApplet[] = { (byte) 0x00, (byte) 0xa4, (byte) 0x04, (byte) 0x00, (byte) 0x0b, (byte) 0x4C, (byte) 0x61, (byte) 0x62, (byte) 0x61, (byte) 0x6B, (byte) 0x41, (byte) 0x70, (byte) 0x70, (byte) 0x6C, (byte) 0x65, (byte) 0x74 };
 
 	static CardManager cardManager = new CardManager();
 	private String error = null;
@@ -27,6 +25,8 @@ public class CardInterface {
 	public String getError() {
 		return error;
 	}
+
+	private static final JAXBConverter<Entries> CONVERTER = new JAXBConverter<Entries>(Entries.class, "resources/schemas/entries.xsd");
 
 	static private enum AppletState {
 		NEW(0), BASIC(15), AUTHENTICATED(255);
@@ -42,88 +42,82 @@ public class CardInterface {
 		}
 	}
 
-	// TODO: remove simulated card from final version
-    /**
-     * Connects to smartcard or Prepares simulator.
-     *
-     * @param simulator present
-     * @return success of session creation
-     */
-	public boolean InitSession(boolean simulator) {
-		if (simulator) {
-			// Simulated smartcard
-			byte[] installData = new byte[10];
-			cardManager.prepareLocalSimulatorApplet(appletAID, installData, SimpleApplet.class);
-		} else {
-			// Real smartcard
-			try {
-				if (cardManager.ConnectToCard()) {
-					ResponseAPDU output = cardManager.sendAPDU(selectApplet);
-				} else {
-					this.error = cardManager.getError_state();
-					return false;
-				}
-			} catch (Exception CardException) {
+	/**
+	 * Connects to smartcard.
+	 *
+	 * @return success of session creation
+	 */
+	@SuppressWarnings("restriction")
+	public boolean InitSession() {
+		try {
+			if (cardManager.ConnectToCard()) {
+				ResponseAPDU output = cardManager.sendAPDU(selectApplet);
+			} else {
 				this.error = cardManager.getError_state();
-				// e.printStackTrace();
 				return false;
 			}
+		} catch (Exception e) {
+			this.error = cardManager.getError_state();
+			// e.printStackTrace();
+			return false;
 		}
 		return true;
 	}
 
-    /**
-     * Disconnects from smartcard.
-     *
-     * @param simulator present
-     * @return success of session deletion
-     */
-	public boolean CloseSession(boolean simulator) {
-		if (!simulator) {
-			try {
-				cardManager.DisconnectFromCard();
-			} catch (Exception e) {
-				this.error = "Close Session : " + e;
-				// e.printStackTrace();
-				return false;
-			}
+	/**
+	 * Disconnects from smartcard.
+	 *
+	 * @return success of session deletion
+	 */
+	public boolean CloseSession() {
+		try {
+			cardManager.DisconnectFromCard();
+		} catch (Exception e) {
+			this.error = "Close Session : " + e;
+			// e.printStackTrace();
+			return false;
 		}
 		return true;
 	}
 
-    /**
-     * Generate password on smartcard.
-     *
-     * @param passwordLength length of desired password
-     * @return the password
-     */
+	// TODO: test responseAPDU class with real card
+
+	/**
+	 * Generate password on smartcard.
+	 *
+	 * @param passwordLength
+	 *            length of desired password
+	 * @return the password
+	 */
+	@SuppressWarnings("restriction")
 	public String GeneratePassword(int passwordLength) {
 		String password = null;
 
 		byte DataLength = 0x00;
 		byte apdu[] = new byte[CardManager.HEADER_LENGTH + DataLength];
 		apdu[CardManager.OFFSET_CLA] = (byte) 0xB0;
-		apdu[CardManager.OFFSET_INS] = (byte) 0x62;	
+		apdu[CardManager.OFFSET_INS] = (byte) 0x62;
 		apdu[CardManager.OFFSET_P1] = (byte) passwordLength;
 		apdu[CardManager.OFFSET_P2] = (byte) 0x00;
 		apdu[CardManager.OFFSET_LC] = DataLength;
 		try {
-			// ResponseAPDU response = cardManager.sendAPDU(apdu);
-			byte[] response = cardManager.sendAPDUSimulator(apdu);
-			password = Arrays.toString(response);
+			ResponseAPDU response = cardManager.sendAPDU(apdu);
+			// response.toString();
+			password = Arrays.toString(response.getBytes());
 		} catch (Exception e) {
 			this.error = "Generate Password : " + e;
 		}
-
 		return password;
 	}
 
-    /**
-     * Set PIN on smartcard.
-     *
-     * @param pin user input
-     * @return success of PIN verification
-     */
+	/**
+	 * Set PIN on smartcard.
+	 *
+	 * @param pin
+	 *            user input
+	 * @return success of PIN verification
+	 */
+	@SuppressWarnings("restriction")
 	public boolean SetPIN(char[] pin) {
 		boolean state = false;
 
@@ -138,10 +132,9 @@ public class CardInterface {
 			apdu[CardManager.OFFSET_DATA + i] = (byte) (pin[i] - '0');
 		}
 		try {
-			// ResponseAPDU response = cardManager.sendAPDU(apdu);
-			byte[] response = cardManager.sendAPDUSimulator(apdu);
-			byte[] valid = {(byte) 0x90, (byte) 0x00};
-			if (Arrays.equals(response, valid)) {
+			ResponseAPDU response = cardManager.sendAPDU(apdu);
+			byte[] valid = { (byte) 0x90, (byte) 0x00 };
+			if (Arrays.equals(response.getBytes(), valid)) {
 				state = true;
 				this.error = "PIN successfully set.";
 			} else {
@@ -154,12 +147,14 @@ public class CardInterface {
 		return state;
 	}
 
-    /**
-     * Verify PIN on smartcard.
-     *
-     * @param pin user input
-     * @return success of PIN verification
-     */
+	/**
+	 * Verify PIN on smartcard.
+	 *
+	 * @param pin
+	 *            user input
+	 * @return success of PIN verification
+	 */
+	@SuppressWarnings("restriction")
 	public boolean VerifyPIN(char[] pin) {
 		boolean state = false;
 
@@ -174,10 +169,9 @@ public class CardInterface {
 			apdu[CardManager.OFFSET_DATA + i] = (byte) (pin[i] - '0');
 		}
 		try {
-			// ResponseAPDU response = cardManager.sendAPDU(apdu);
-			byte[] response = cardManager.sendAPDUSimulator(apdu);
-			byte[] valid = {(byte) 0x90, (byte) 0x00};
-			if (Arrays.equals(response, valid)) {
+			ResponseAPDU response = cardManager.sendAPDU(apdu);
+			byte[] valid = { (byte) 0x90, (byte) 0x00 };
+			if (Arrays.equals(response.getBytes(), valid)) {
 				state = true;
 			} else {
 				this.error = "Invalid PIN";
@@ -189,65 +183,172 @@ public class CardInterface {
 		return state;
 	}
 
-	// TODO
-	public DataModel LoadData() {
-		DataModel ADT = DataModel.getInstance();
-
-		byte DataLength = 0x00;
-		byte apdu[] = new byte[CardManager.HEADER_LENGTH + DataLength];
-		apdu[CardManager.OFFSET_CLA] = (byte) 0xB0;
-		apdu[CardManager.OFFSET_INS] = (byte) 0x00;
-		apdu[CardManager.OFFSET_P1] = (byte) 0x00;
-		apdu[CardManager.OFFSET_P2] = (byte) 0x00;
-		apdu[CardManager.OFFSET_LC] = DataLength;
-		try {
-			// ResponseAPDU response = cardManager.sendAPDU(apdu);
-			byte[] response = cardManager.sendAPDUSimulator(apdu);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return ADT;
-	}
-
-	// TODO
-	public boolean SaveData(DataModel ADT) {
+	// TODO: testing
+	/**
+	 * Load passwords from smartcard and read entries from file.
+	 *
+	 * @return list of entries containing all data
+	 */
+	@SuppressWarnings("restriction")
+	public boolean LoadData() {
 		boolean state = false;
 
+		DataModel ADT = DataModel.getInstance();
+		Entries entries = ADT.getEntries();
+		List<Entry> entry_list = entries.getEntry();
+
+		FileHelper.openFile(JPassFrame.getInstance());
+
+		try {
+			JPassFrame.getInstance().getModel().setEntries(DocumentHelper.newInstance(JPassFrame.getInstance().filename, JPassFrame.getInstance().password).readDocument());
+			JPassFrame.getInstance().getModel().setFileName(JPassFrame.getInstance().filename);
+			JPassFrame.getInstance().getModel().setPassword(JPassFrame.getInstance().password);
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (DocumentProcessException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
 		byte DataLength = 0x00;
 		byte apdu[] = new byte[CardManager.HEADER_LENGTH + DataLength];
 		apdu[CardManager.OFFSET_CLA] = (byte) 0xB0;
-		apdu[CardManager.OFFSET_INS] = (byte) 0x00;
-		apdu[CardManager.OFFSET_P1] = (byte) 0x00;
+		apdu[CardManager.OFFSET_INS] = (byte) 0x61;
 		apdu[CardManager.OFFSET_P2] = (byte) 0x00;
 		apdu[CardManager.OFFSET_LC] = DataLength;
-		try {
-			// ResponseAPDU response = cardManager.sendAPDU(apdu);
-			byte[] response = cardManager.sendAPDUSimulator(apdu);
-		} catch (Exception e) {
-			e.printStackTrace();
+		byte index = 0;
+
+		while (true) {
+
+			apdu[CardManager.OFFSET_P1] = index;
+
+			try {
+				ResponseAPDU response = cardManager.sendAPDU(apdu);
+
+				byte[] valid = { (byte) 0x90, (byte) 0x00 };
+				byte[] full = { (byte) 0x69, (byte) 0x06 };
+				if (Arrays.equals(response.getBytes(), valid)) {
+					state = true;
+				} else if (Arrays.equals(response.getBytes(), full)) {
+					state = true;
+					break;
+				} else {
+					this.error = "Error occured while saving the passwords";
+				}
+
+				String raw_data = bytesToHex(response.getData());
+
+				// TODO: parse the password
+				JPassFrame.getInstance().getModel().getEntries().getEntry().get(index).setPassword(raw_data);
+				index++;
+			} catch (Exception e) {
+
+				e.printStackTrace();
+				this.error = "Load Data : " + e;
+			}
+
 		}
+
+		return true;
+	}
+
+	// TODO: testing
+	/**
+	 * Save passwords to smartcard and write entries to file.
+	 *
+	 * @return success of operation
+	 * @throws IOException
+	 */
+	@SuppressWarnings("restriction")
+	public boolean SaveData() {
+		boolean state = false;
+
+		DataModel ADT = DataModel.getInstance();
+		List<Entry> entry_list = ADT.getEntries().getEntry();
+		byte entry_count = (byte) entry_list.size();
+		// conversion
+		String data = "";
+		for (byte i = 0; i < entry_count; i++) {
+			data = "";
+			data += (entry_list.get(i).getTitle());
+			data += "\r\n";
+			data += (entry_list.get(i).getPassword());
+			data += "\r\n\r\n";
+
+			byte message[] = data.getBytes();
+
+			byte DataLength = (byte) (message.length);
+
+			byte apdu[] = new byte[CardManager.HEADER_LENGTH + DataLength];
+			apdu[CardManager.OFFSET_CLA] = (byte) 0xB0;
+			apdu[CardManager.OFFSET_INS] = (byte) 0x58;
+			apdu[CardManager.OFFSET_P1] = (byte) i;
+			apdu[CardManager.OFFSET_P2] = (byte) (entry_count - i - 1);
+			apdu[CardManager.OFFSET_LC] = DataLength;
+
+			for (byte j = 0; j < (byte) DataLength; j++) {
+				apdu[CardManager.OFFSET_DATA + j] = message[j];
+			}
+
+			try {
+				ResponseAPDU response = cardManager.sendAPDU(apdu);
+				byte[] valid = { (byte) 0x90, (byte) 0x00 };
+				if (Arrays.equals(response.getBytes(), valid)) {
+					state = true;
+				} else {
+					this.error = "Error occured while saving the passwords";
+				}
+
+			} catch (Exception e) {
+				this.error = "Save Data : " + e;
+			}
+
+			entry_list.get(i).setPassword(null);
+
+		}
+		FileHelper.saveFile(JPassFrame.getInstance(), true);
 
 		return state;
 	}
 
-	// TODO
-	public AppletState GetState() {
-
-		byte DataLength = 0x00;
-		byte apdu[] = new byte[CardManager.HEADER_LENGTH + DataLength];
-		apdu[CardManager.OFFSET_CLA] = (byte) 0xB0;
-		apdu[CardManager.OFFSET_INS] = (byte) 0x00;
-		apdu[CardManager.OFFSET_P1] = (byte) 0x00;
-		apdu[CardManager.OFFSET_P2] = (byte) 0x00;
-		apdu[CardManager.OFFSET_LC] = DataLength;
-		try {
-			// ResponseAPDU response = cardManager.sendAPDU(apdu);
-			byte[] response = cardManager.sendAPDUSimulator(apdu);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return AppletState.NEW;
+	public String byteToHex(byte data) {
+		StringBuilder buf = new StringBuilder();
+		buf.append(toHexChar((data >>> 4) & 0x0F));
+		buf.append(toHexChar(data & 0x0F));
+		return buf.toString();
 	}
+
+	public char toHexChar(int i) {
+		if ((0 <= i) && (i <= 9)) {
+			return (char) ('0' + i);
+		} else {
+			return (char) ('a' + (i - 10));
+		}
+	}
+
+	public String bytesToHex(byte[] data) {
+		StringBuilder buf = new StringBuilder();
+		for (int i = 0; i < data.length; i++) {
+			buf.append(byteToHex(data[i]));
+			buf.append(" ");
+		}
+		return (buf.toString());
+	}
+
+	public static int hex2decimal(String s) {
+		String digits = "0123456789ABCDEF";
+		s = s.toUpperCase();
+		int val = 0;
+		for (int i = 0; i < s.length(); i++) {
+			char c = s.charAt(i);
+			int d = digits.indexOf(c);
+			val = 16 * val + d;
+		}
+		return val;
+	}
+
 }
