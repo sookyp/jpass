@@ -23,6 +23,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
 import java.io.FileNotFoundException;
@@ -107,6 +108,7 @@ public class CardInterface {
 		String password = null;
 
 		byte DataLength = 0x00;
+		ResponseAPDU response = null;
 		byte apdu[] = new byte[CardManager.HEADER_LENGTH + DataLength];
 		apdu[CardManager.OFFSET_CLA] = (byte) 0xB0;
 		apdu[CardManager.OFFSET_INS] = (byte) 0x62;
@@ -114,12 +116,27 @@ public class CardInterface {
 		apdu[CardManager.OFFSET_P2] = (byte) 0x00;
 		apdu[CardManager.OFFSET_LC] = DataLength;
 		try {
-			ResponseAPDU response = cardManager.sendAPDU(apdu);
-			// response.toString();
-			password = Arrays.toString(response.getBytes());
+			response = cardManager.sendAPDU(apdu);
 		} catch (Exception e) {
 			this.error = "Generate Password : " + e;
 		}
+		
+		SecureRandom sr;
+		try {
+			sr = SecureRandom.getInstance("SHA1PRNG");
+			sr.setSeed(response.getData());
+			for(int i = 0; i < response.getData().length; i++) {
+				password += sr.nextInt();
+			}
+			
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+		// password = Arrays.toString(response.getBytes());
+		
 		return password;
 	}
 
@@ -253,8 +270,8 @@ public class CardInterface {
 					this.error = "Error occured while saving the passwords";
 				}
 
-				String encryptionKey = "0123456789abcdef";
-				String IV = "AAAAAAAAAAAAAAAA";
+				String encryptionKey = "16023FBEB58DF4EB36229286419F4589";
+				String IV = "DE46F8904224A0E86E8F8F08F03BCC1A";
 
 				String decrytpted = null;
 				byte[] message = response.getData();
@@ -322,9 +339,8 @@ public class CardInterface {
 		// conversion
 		String data = "";
 
-		// TODO: use proper encryption parameters
-		String encryptionKey = "0123456789abcdef";
-		String IV = "AAAAAAAAAAAAAAAA";
+		String encryptionKey = "16023FBEB58DF4EB36229286419F4589";
+		String IV = "DE46F8904224A0E86E8F8F08F03BCC1A";
 
 		for (byte i = 0; i < entry_count; i++) {
 			data = "";
